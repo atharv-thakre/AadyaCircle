@@ -10,7 +10,7 @@ import AITherapists from './AITherapists';
 import SentimentAnalysis from './SentimentAnalysis';
 import Freelance from './Freelance';
 import JobsForHer from './JobsForHer';
-import GovernmentSchemes from './Community';
+import GovernmentSchemes from './GovtServices';
 import ExerciseToImprove from './ExerciseToImprove';
 import { useAuth } from '../../context/AuthContext';
 
