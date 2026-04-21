@@ -27,15 +27,11 @@ The frontend is a modern React application built with Vite, featuring real-time 
 frontend/
 ├── src/
 │   ├── Components/
-│   │   ├── ExerciseLogic.js        # Exercise validation logic
 │   │   ├── FeedbackDisplay.*       # Feedback UI components
-│   │   ├── PoseDetector.js         # Pose detection wrapper
-│   │   ├── WebcamFeed.*            # Webcam integration
 │   │   ├── Dashbaord/              # Dashboard modules
 │   │   │   ├── AITherapists.jsx    # AI chat interface
 │   │   │   ├── Community.jsx       # Community features
 │   │   │   ├── Dashboard.jsx       # Main dashboard
-│   │   │   ├── ExerciseToImprove.jsx
 │   │   │   ├── Freelance.jsx       # Freelance services
 │   │   │   ├── JobsForHer.jsx      # Job listings
 │   │   │   └── SentimentAnalysis.jsx
@@ -150,7 +146,7 @@ Runs ESLint to check code quality and style.
 **Files Involved:**
 
 - `Components/PoseDetector.js` - Main detection logic
-- `Components/WebcamFeed.jsx` - Webcam integration
+
 - `utils/calculateAngle.js` - Angle calculations
 - `shims/mediapipePoseShim.js` - MediaPipe wrapper
 
@@ -163,7 +159,6 @@ Runs ESLint to check code quality and style.
 
 **Files Involved:**
 
-- `Components/ExerciseLogic.js` - Exercise validation
 - `utils/repCounter.js` - Rep counting algorithm
 - `utils/scoring.js` - Score calculation
 - `Components/FeedbackDisplay.jsx` - User feedback
@@ -180,7 +175,7 @@ Runs ESLint to check code quality and style.
 
 - `Dashboard/AITherapists.jsx` - AI chat support
 - `Dashboard/Community.jsx` - Social features
-- `Dashboard/ExerciseToImprove.jsx` - Personalized exercises
+
 - `Dashboard/Freelance.jsx` - Service marketplace
 - `Dashboard/JobsForHer.jsx` - Job portal
 - `Dashboard/SentimentAnalysis.jsx` - Wellness tracking
