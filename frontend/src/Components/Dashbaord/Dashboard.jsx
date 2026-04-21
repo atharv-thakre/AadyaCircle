@@ -23,6 +23,8 @@ import Freelance from "./Freelance";
 import JobsForHer from "./JobsForHer";
 import GovernmentSchemes from "./GovtServices";
 import Exercise from "./Exercise";
+import Community from "./Community";
+import Meditation from "./Meditation";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Dashboard() {
@@ -91,7 +93,9 @@ export default function Dashboard() {
     },
     { name: "Jobs For Her", icon: <Briefcase size={18} /> },
     { name: "Freelance", icon: <Briefcase size={18} /> },
+    { name: "Community", icon: <Users size={18} /> },
     { name: "Exercises", icon: <Activity size={18} /> },
+    { name: "Meditation", icon: <Sun size={18} /> },
   ].filter(
     (tab) =>
       !tab.requiresWomanlancer ||
@@ -316,8 +320,12 @@ export default function Dashboard() {
             <JobsForHer isDarkMode={isDarkMode} />
           ) : activeTab === "Freelance" ? (
             <Freelance isDarkMode={isDarkMode} />
+          ) : activeTab === "Community" ? (
+            <Community isDarkMode={isDarkMode} />
           ) : activeTab === "Exercises" ? (
             <Exercise isDarkMode={isDarkMode} />
+          ) : activeTab === "Meditation" ? (
+            <Meditation isDarkMode={isDarkMode} />
           ) : (
             <div
               className={`w-full h-full rounded-2xl border border-dashed flex flex-col items-center justify-center text-center shadow-lg transition-colors duration-500 ${isDarkMode ? "border-[#c47ea8]/30 bg-[#0f0f0f]/40 backdrop-blur-md hover:bg-[#0f0f0f]/60" : "border-[#c47ea8]/20 bg-white/50 backdrop-blur-md hover:bg-white/80"}`}

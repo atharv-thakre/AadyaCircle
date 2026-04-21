@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Briefcase, Loader2, MapPin, DollarSign, Building2 } from 'lucide-react';
+import { Plus, X, Briefcase, Loader2, MapPin, IndianRupee, Building2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function JobsForHer({ isDarkMode }) {
@@ -126,7 +126,7 @@ export default function JobsForHer({ isDarkMode }) {
                                     )}
                                     {job.salary ? (
                                         <div className={`flex items-center gap-1.5 font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                            <DollarSign size={14} /> {job.salary}
+                                            <IndianRupee size={14} /> {job.salary}
                                         </div>
                                     ) : null}
                                 </div>
@@ -187,7 +187,7 @@ export default function JobsForHer({ isDarkMode }) {
                                     </select>
                                 </div>
                                 <div className="flex-1">
-                                    <label className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Target Salary ($)</label>
+                                    <label className={`block text-xs font-medium mb-1.5 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Target Salary (₹)</label>
                                     <input type="number" min="0" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none transition-colors ${isDarkMode ? 'bg-[#111] border-[#333] text-white focus:border-[#c47ea8]' : 'bg-gray-50 border-gray-200 text-gray-900 focus:border-[#c47ea8]'}`} placeholder="e.g. 75000" />
                                 </div>
                             </div>
