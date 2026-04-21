@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const COMMUNITIES = [
+const INITIAL_COMMUNITIES = [
   {
     id: "general",
     name: "General Community",
@@ -102,12 +102,17 @@ const DUMMY_MESSAGES = {
 
 export default function Community({ isDarkMode }) {
   const { token, user } = useAuth();
-  const [activeComm, setActiveComm] = useState(COMMUNITIES[0]);
+  const [communities, setCommunities] = useState(INITIAL_COMMUNITIES);
+  const [activeComm, setActiveComm] = useState(communities[0]);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [typingUsers, setTypingUsers] = useState([]);
   const [participantCount, setParticipantCount] = useState(0);
   const [wsStatus, setWsStatus] = useState("disconnected");
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newServer, setNewServer] = useState({ name: "", description: "", category: "Lifestyle" });
+  const [isCreating, setIsCreating] = useState(false);
   
   const wsRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -182,6 +187,41 @@ export default function Community({ isDarkMode }) {
     setInputText("");
   };
 
+  const handleAddServer = (e) => {
+    e.preventDefault();
+    if (!newServer.name.trim()) return;
+    
+    setIsCreating(true);
+    
+    // Simulate creation delay for "premium" feel
+    setTimeout(() => {
+      const colors = [
+        "from-rose-400 to-pink-500",
+        "from-amber-400 to-orange-500",
+        "from-cyan-400 to-blue-500",
+        "from-emerald-400 to-teal-500"
+      ];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      const createdServer = {
+        id: `society-${Date.now()}`,
+        name: newServer.name,
+        icon: <Users size={20} />,
+        isBackend: false,
+        description: newServer.description || "A new space for our community to grow together.",
+        color: randomColor,
+        tags: [newServer.category, "New"],
+        members: "1",
+      };
+
+      setCommunities(prev => [...prev, createdServer]);
+      setIsAddModalOpen(false);
+      setIsCreating(false);
+      setNewServer({ name: "", description: "", category: "Lifestyle" });
+      setActiveComm(createdServer);
+    }, 1200);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
@@ -197,7 +237,9 @@ export default function Community({ isDarkMode }) {
         
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-serif font-bold italic">Societies</h2>
-          <button className={`p-2 rounded-full ${
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className={`p-2 rounded-full transition-transform hover:scale-110 active:scale-90 ${
             isDarkMode ? "bg-white/5 hover:bg-white/10" : "bg-[#c47ea8]/5 hover:bg-[#c47ea8]/10"
           }`}>
             <Plus size={20} className="text-[#c47ea8]" />
@@ -216,7 +258,7 @@ export default function Community({ isDarkMode }) {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-4 no-scrollbar pr-1">
-          {COMMUNITIES.map((comm) => (
+          {communities.map((comm) => (
             <motion.div
               key={comm.id}
               whileHover={{ scale: 1.02 }}
@@ -447,6 +489,109 @@ export default function Community({ isDarkMode }) {
           <ArrowRight size={16} />
         </button>
       </div>
+
+      {/* CREATE SOCIETY MODAL */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className={`w-full max-w-md rounded-[3rem] p-10 relative overflow-hidden ${
+                isDarkMode ? "bg-[#0f0f0f] border border-white/10" : "bg-white shadow-2xl"
+              }`}
+            >
+              <div className="relative z-10">
+                <h2 className="text-3xl font-serif font-bold italic mb-2">Create Society</h2>
+                <p className="text-xs opacity-50 mb-8 font-medium italic">Start a new circle of empowerment.</p>
+
+                <form onSubmit={handleAddServer} className="space-y-6">
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 ml-4">Society Name</label>
+                    <input 
+                      required
+                      type="text" 
+                      value={newServer.name}
+                      onChange={e => setNewServer({...newServer, name: e.target.value})}
+                      placeholder="e.g. Empowered Leads" 
+                      className={`w-full px-6 py-4 rounded-3xl border focus:outline-none transition-all ${
+                        isDarkMode ? "bg-white/5 border-white/10 focus:border-[#c47ea8]" : "bg-gray-50 border-gray-100 focus:border-[#c47ea8]"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 ml-4">Purpose / Description</label>
+                    <textarea 
+                      value={newServer.description}
+                      onChange={e => setNewServer({...newServer, description: e.target.value})}
+                      placeholder="What is this society about?" 
+                      rows="3"
+                      className={`w-full px-6 py-4 rounded-3xl border focus:outline-none transition-all resize-none ${
+                        isDarkMode ? "bg-white/5 border-white/10 focus:border-[#c47ea8]" : "bg-gray-50 border-gray-100 focus:border-[#c47ea8]"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-2 text-left">
+                    <label className="text-[10px] font-bold uppercase tracking-widest opacity-40 ml-4">Category</label>
+                    <select 
+                      value={newServer.category}
+                      onChange={e => setNewServer({...newServer, category: e.target.value})}
+                      className={`w-full px-6 py-4 rounded-3xl border focus:outline-none transition-all appearance-none ${
+                        isDarkMode ? "bg-white/5 border-white/10 focus:border-[#c47ea8]" : "bg-gray-50 border-gray-100 focus:border-[#c47ea8]"
+                      }`}
+                    >
+                      <option>Lifestyle</option>
+                      <option>Professional</option>
+                      <option>Wellness</option>
+                      <option>Support</option>
+                    </select>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button 
+                      type="button"
+                      onClick={() => setIsAddModalOpen(false)}
+                      className={`flex-1 py-4 rounded-3xl font-bold text-sm transition-all ${
+                        isDarkMode ? "bg-white/5 hover:bg-white/10" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit"
+                      disabled={isCreating}
+                      className={`flex-1 py-4 rounded-3xl font-bold text-sm bg-gradient-to-br from-[#c47ea8] to-purple-600 text-white shadow-xl shadow-[#c47ea8]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isCreating ? "opacity-70 blur-[1px]" : ""}`}
+                    >
+                      {isCreating ? (
+                        <motion.div 
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Star size={18} />
+                        </motion.div>
+                      ) : (
+                        "Create Circle"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+              
+              {/* Background Glows in Modal */}
+              <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-gradient-to-br from-[#c47ea8] to-purple-600 opacity-20 blur-3xl rounded-full" />
+              <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-br from-blue-400 to-indigo-600 opacity-10 blur-3xl rounded-full" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </motion.div>
   );
