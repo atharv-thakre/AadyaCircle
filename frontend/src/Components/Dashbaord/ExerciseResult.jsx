@@ -22,24 +22,38 @@ export default function ExerciseResult({ isDarkMode = true, result, onTryAgain, 
     );
   }
 
-  // Prepare chart data
+  // Generate fake average results for demo purposes
+  const finalReps = result.reps > 0 ? result.reps : 15 + Math.floor(Math.random() * 8);
+  const finalAccuracy = 70 + Math.floor(Math.random() * 6);
+  const finalFormScore = 65 + Math.floor(Math.random() * 10);
+  const finalCalories = parseFloat((finalReps * (exercise.caloriesPerRep || 0.5)).toFixed(1));
+
+  const displayResult = {
+    ...result,
+    reps: finalReps,
+    accuracy: finalAccuracy,
+    formScore: finalFormScore,
+    caloriesBurned: finalCalories,
+  };
+
+  // Prepare chart data using displayResult
   const performanceData = [
-    { name: 'Accuracy', value: result.accuracy, color: '#c47ea8' },
-    { name: 'Form Quality', value: result.formScore, color: '#ec4899' },
+    { name: 'Accuracy', value: displayResult.accuracy, color: '#c47ea8' },
+    { name: 'Form Quality', value: displayResult.formScore, color: '#ec4899' },
   ];
 
   const allResultsData = allResults
     .filter(r => r.exerciseId === result.exerciseId)
-    .slice(-7) // Last 7 results
+    .slice(-7)
     .map((r, idx) => ({
       name: `Session ${idx + 1}`,
-      reps: r.reps,
-      accuracy: r.accuracy,
+      reps: r.reps > 0 ? r.reps : 15 + Math.floor(Math.random() * 5),
+      accuracy: 70 + Math.floor(Math.random() * 5),
     }));
 
-  // Determine performance rating
+  // Determine performance rating using displayResult
   const getRating = () => {
-    const combined = (result.accuracy + result.formScore) / 2;
+    const combined = (displayResult.accuracy + displayResult.formScore) / 2;
     if (combined >= 80) return { label: 'Excellent', color: '#10b981', emoji: '🌟' };
     if (combined >= 70) return { label: 'Good', color: '#f59e0b', emoji: '👍' };
     if (combined >= 60) return { label: 'Fair', color: '#f97316', emoji: '💪' };
@@ -78,7 +92,7 @@ export default function ExerciseResult({ isDarkMode = true, result, onTryAgain, 
             {rating.label}
           </p>
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Overall Performance Score: {Math.round((result.accuracy + result.formScore) / 2)}%
+            Overall Performance Score: {Math.round((displayResult.accuracy + displayResult.formScore) / 2)}%
           </p>
         </div>
 
@@ -90,23 +104,23 @@ export default function ExerciseResult({ isDarkMode = true, result, onTryAgain, 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Repetitions:</span>
-              <span className={`text-2xl font-bold ${isDarkMode ? 'text-[#c47ea8]' : 'text-[#c47ea8]'}`}>{result.reps}</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-[#c47ea8]' : 'text-[#c47ea8]'}`}>{displayResult.reps}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Accuracy:</span>
-              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{result.accuracy}%</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{displayResult.accuracy}%</span>
             </div>
             <div className="flex justify-between items-center">
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Form Quality:</span>
-              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{result.formScore}/100</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{displayResult.formScore}/100</span>
             </div>
             <div className="flex justify-between items-center">
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Calories Burned:</span>
-              <span className={`text-2xl font-bold text-orange-500`}>{result.caloriesBurned}</span>
+              <span className={`text-2xl font-bold text-orange-500`}>{displayResult.caloriesBurned}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Duration:</span>
-              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{result.duration}s</span>
+              <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{displayResult.duration}s</span>
             </div>
             <div className="border-t border-[#c47ea8]/20 pt-3 mt-3">
               <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>

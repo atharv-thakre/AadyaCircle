@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Square, RotateCcw, ArrowLeft, Loader2 } from 'lucide-react';
 import { getExerciseConfig } from '../../utils/exerciseConfig';
 import { initializePoseDetector, detectPose, disposePoseDetector, drawSkeleton } from '../../utils/poseDetector';
@@ -137,7 +137,6 @@ export default function ExercisePerformer({ isDarkMode = true, exerciseId, onBac
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          handleStop();
           return 0;
         }
         return prev - 1;
@@ -146,6 +145,13 @@ export default function ExercisePerformer({ isDarkMode = true, exerciseId, onBac
 
     return () => clearInterval(interval);
   }, [isStarted]);
+
+  // Auto-submit when timer hits zero
+  useEffect(() => {
+    if (timeLeft === 0 && isStarted) {
+      handleSubmit();
+    }
+  }, [timeLeft, isStarted]);
 
   // Handle video canvas size
   useEffect(() => {
@@ -158,14 +164,17 @@ export default function ExercisePerformer({ isDarkMode = true, exerciseId, onBac
     }
   }, [isCameraReady]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
+    handleStop();
+    
+    // Use refs or current state - here we trust state is updated
     const stats = {
       exerciseId: exerciseId,
       exerciseName: exercise.name,
       reps,
       accuracy,
-      formScore: scorerRef.current.getStatistics(reps).formQuality,
-      caloriesBurned: scorerRef.current.getStatistics(reps).caloriesBurned,
+      formScore: scorerRef.current?.getStatistics(reps).formQuality || 0,
+      caloriesBurned: scorerRef.current?.getStatistics(reps).caloriesBurned || 0,
       duration: exercise.duration,
       timestamp: new Date().toISOString(),
     };
@@ -175,8 +184,8 @@ export default function ExercisePerformer({ isDarkMode = true, exerciseId, onBac
     history.push(stats);
     localStorage.setItem('exerciseHistory', JSON.stringify(history));
 
-    onComplete(stats);
-  };
+    if (onComplete) onComplete(stats);
+  }, [exerciseId, exercise.name, exercise.duration, reps, accuracy, onComplete]);
 
   if (!exercise) {
     return (
@@ -292,42 +301,34 @@ export default function ExercisePerformer({ isDarkMode = true, exerciseId, onBac
 
         {/* Buttons */}
         <div className="flex gap-3 justify-center">
-          {!isStarted ? (
-            <>
-              <button
-                onClick={handleStart}
-                disabled={!isCameraReady || isLoading}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all ${
-                  isCameraReady && !isLoading
-                    ? 'bg-[#c47ea8] text-white hover:bg-[#b86b9d]'
-                    : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                <Play size={18} />
-                Start
-              </button>
-            </>
+          {!isStarted && timeLeft > 0 ? (
+            <button
+              onClick={handleStart}
+              disabled={!isCameraReady || isLoading}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all ${
+                isCameraReady && !isLoading
+                  ? 'bg-[#c47ea8] text-white hover:bg-[#b86b9d]'
+                  : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <Play size={18} />
+              {timeLeft < exercise.duration ? 'Resume' : 'Start'}
+            </button>
+          ) : isStarted ? (
+            <button
+              onClick={handleStop}
+              className="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-all"
+            >
+              <Square size={18} />
+              Stop
+            </button>
           ) : (
-            <>
-              <button
-                onClick={handleStop}
-                className="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold bg-red-600 text-white hover:bg-red-700 transition-all"
-              >
-                <Square size={18} />
-                Stop
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={timeLeft > 0}
-                className={`flex items-center gap-2 px-6 py-2 rounded-lg font-semibold transition-all ${
-                  timeLeft === 0
-                    ? 'bg-[#c47ea8] text-white hover:bg-[#b86b9d]'
-                    : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                Submit Result
-              </button>
-            </>
+            <button
+              onClick={handleSubmit}
+              className="flex items-center gap-2 px-6 py-2 rounded-lg font-semibold bg-[#c47ea8] text-white hover:bg-[#b86b9d] transition-all"
+            >
+              Submit Result
+            </button>
           )}
         </div>
       </div>

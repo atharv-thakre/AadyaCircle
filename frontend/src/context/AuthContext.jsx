@@ -8,6 +8,7 @@ const defaultProgress = {
   sentimentCompleted: false,
   unlockedFeatures: {},
   sentimentSummary: null,
+  exerciseStats: [],
 };
 
 function loadStoredProgress() {
