@@ -17,7 +17,11 @@ import {
   Heart,
   ChevronRight,
   Sparkles,
+  Video,
+  VideoOff,
+  ShieldCheck,
 } from "lucide-react";
+import { initializePoseDetector, detectPose, disposePoseDetector, drawSkeleton } from "../../utils/poseDetector";
 
 const SOUNDS = [
   { id: "rain", name: "Soft Rain", icon: <CloudRain size={20} />, color: "from-blue-400 to-blue-600" },
@@ -51,6 +55,20 @@ export default function Meditation({ isDarkMode }) {
   const [totalMins, setTotalMins] = useState(1450); // Total mock minutes
   const [streak, setStreak] = useState(12); // Mock streak
   const [breathState, setBreathState] = useState("Inhale"); // Inhale, Hold, Exhale
+  
+  // Video Tracking State
+  const [isTracking, setIsTracking] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [stillness, setStillness] = useState(100);
+  const [isLoadingCamera, setIsLoadingCamera] = useState(false);
+  const [movementLog, setMovementLog] = useState([]);
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const detectorRef = useRef(null);
+  const frameLoopRef = useRef(null);
+  const lastPosRef = useRef(null);
 
   const timerRef = useRef(null);
 
@@ -82,6 +100,87 @@ export default function Meditation({ isDarkMode }) {
       return () => clearInterval(breathInterval);
     }
   }, [isActive]);
+
+  // Handle Video Tracking Lifecycle
+  useEffect(() => {
+    if (isTracking) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [isTracking]);
+
+  const startCamera = async () => {
+    try {
+      setIsLoadingCamera(true);
+      detectorRef.current = await initializePoseDetector();
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 240 },
+      });
+      
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          setIsCameraReady(true);
+          setIsLoadingCamera(false);
+          startDetectionLoop();
+        };
+      }
+    } catch (error) {
+      console.error("Camera access failed:", error);
+      setIsLoadingCamera(false);
+      setIsTracking(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    if (frameLoopRef.current) {
+      cancelAnimationFrame(frameLoopRef.current);
+    }
+    setIsCameraReady(false);
+    setStillness(100);
+  };
+
+  const startDetectionLoop = async () => {
+    const runDetection = async () => {
+      if (!videoRef.current) return;
+      
+      const keypoints = await detectPose(videoRef.current);
+      if (keypoints && keypoints.length > 0) {
+        // Track nose for stillness
+        const nose = keypoints.find(kp => kp.name === "nose");
+        if (nose && nose.score > 0.5) {
+          if (lastPosRef.current) {
+            const dx = nose.x - lastPosRef.current.x;
+            const dy = nose.y - lastPosRef.current.y;
+            const movement = Math.sqrt(dx * dx + dy * dy);
+            
+            // Update stillness score (0-100)
+            setStillness(prev => {
+              const decay = movement > 5 ? 2 : -0.5; // Penalty for movement, bonus for stillness
+              return Math.max(0, Math.min(100, prev - decay));
+            });
+          }
+          lastPosRef.current = { x: nose.x, y: nose.y };
+        }
+
+        // Draw skeleton overlay
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext("2d");
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          drawSkeleton(ctx, keypoints, 0.3);
+        }
+      }
+      frameLoopRef.current = requestAnimationFrame(runDetection);
+    };
+    frameLoopRef.current = requestAnimationFrame(runDetection);
+  };
 
   const toggleTimer = () => {
     setIsActive(!isActive);
@@ -188,8 +287,14 @@ export default function Meditation({ isDarkMode }) {
               className="w-20 h-20 rounded-full bg-gradient-to-br from-[#c47ea8] to-purple-600 text-white flex items-center justify-center shadow-2xl shadow-[#c47ea8]/30 hover:scale-105 active:scale-95 transition-all">
               {isActive ? <Pause size={32} /> : <Play size={32} className="ml-1" />}
             </button>
-            <button className={`p-4 rounded-full transition-all active:scale-90 ${isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'}`}>
-              <Sparkles size={24} className="opacity-50" />
+            <button 
+              onClick={() => setIsTracking(!isTracking)}
+              className={`p-4 rounded-full transition-all active:scale-90 ${
+                isTracking 
+                  ? 'bg-[#c47ea8] text-white shadow-lg shadow-[#c47ea8]/30' 
+                  : isDarkMode ? 'bg-white/5 hover:bg-white/10' : 'bg-black/5 hover:bg-black/10'
+              }`}>
+              {isTracking ? <Video size={24} /> : <VideoOff size={24} className="opacity-50" />}
             </button>
           </div>
         </div>
@@ -216,6 +321,39 @@ export default function Meditation({ isDarkMode }) {
             ))}
           </div>
         </div>
+
+        {/* Video Tracking Preview (Floating) */}
+        <AnimatePresence>
+          {isTracking && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              className="absolute bottom-10 right-10 w-48 h-36 rounded-3xl overflow-hidden border border-white/10 shadow-2xl backdrop-blur-xl z-50 bg-black/40 group"
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover transform scale-x-[-1]"
+              />
+              <canvas
+                ref={canvasRef}
+                width="192"
+                height="144"
+                className="absolute inset-0 w-full h-full pointer-events-none"
+              />
+              <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
+                <div className={`w-1.5 h-1.5 rounded-full ${stillness > 80 ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+                <span className="text-[8px] font-bold text-white uppercase tracking-tighter">AI Tracking Active</span>
+              </div>
+              <div className="absolute bottom-2 right-2 bg-[#c47ea8]/80 text-white text-[10px] font-bold px-2 py-1 rounded-lg backdrop-blur-sm">
+                {Math.round(stillness)}% Still
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* RIGHT PANEL: ANALYSIS & TRACKER */}
@@ -240,10 +378,10 @@ export default function Meditation({ isDarkMode }) {
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-teal-400">
-                <TrendingUp size={14} />
-                <span className="text-xs font-bold">Monthly Focus</span>
+                <ShieldCheck size={14} />
+                <span className="text-xs font-bold">Stillness Score</span>
               </div>
-              <p className="text-3xl font-bold font-serif italic">+24%</p>
+              <p className="text-3xl font-bold font-serif italic">{Math.round(stillness)}%</p>
             </div>
           </div>
 
